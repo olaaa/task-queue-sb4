@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/src/main/resources/db/migration/V1__create_payment_task.sql" value="bbacbccf-8ffd-422a-9365-e95b5e9404eb" />
+    <file url="file://$PROJECT_DIR$/src/test/java/com/example/paymentqueue/TwoWorkersTest.java" value="1f24d2e7-04bd-42e7-bf8d-c79d0c6f655f" />
+  </component>
+</project>
