@@ -25,20 +25,23 @@ public class PaymentQueueService {
 
     /**
      * Трёхшаговый паттерн захвата платёжного поручения:
-     *
+     * <p/>
      *  1. SELECT FOR UPDATE SKIP LOCKED — находим свободное поручение, блокируем строку.
      *  2. UPDATE state = PROCESSING    — помечаем что поручение наше.
      *     Если UPDATE вернул 0 — кто-то успел раньше, возвращаем Mono.empty().
      *  3. COMMIT (@Transactional)      — блокировка снята, поручение защищено через state.
-     *
+     * <p/>
      * Транзакция в R2DBC передаётся через реактивный контекст (не ThreadLocal).
      * Нельзя разрывать цепочку через block() или subscribeOn(newThread).
+     * <p/>
+     * Транзакция нужна не из-за количества вызовов, а потому что SELECT ... FOR UPDATE SKIP LOCKED
+     * и последующий UPDATE должны выполняться в одном транзакционном контексте, иначе теряется защита от гонок.
      */
     @Transactional
     public Mono<PaymentTaskId> lockNext() {
         return dao.findNextWithSkipLock()
                 .flatMap(taskId ->
-                        dao.stateTransition(
+                        dao.stateTransition( // UPDATE
                                 taskId.id(),
                                 taskId.retryCount(),
                                 PaymentState.WAIT,
@@ -123,8 +126,7 @@ public class PaymentQueueService {
                 });
     }
 
-    @Transactional
-    public Mono<Void> completePayment(PaymentTaskId taskId, PaymentState finalState) {
+    private Mono<Void> completePayment(PaymentTaskId taskId, PaymentState finalState) {
         return dao.stateTransition(
                         taskId.id(),
                         taskId.retryCount(),
